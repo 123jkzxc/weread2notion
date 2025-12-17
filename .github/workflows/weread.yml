@@ -24,6 +24,13 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
+      - name: Debug Environment Variables
+        run: |
+          echo "NOTION_PAGE=${{ secrets.NOTION_PAGE }}"
+          echo "NOTION_DATABASE_ID=${{ secrets.NOTION_DATABASE_ID }}"
+          echo "WEREAD_COOKIE=${{ secrets.WEREAD_COOKIE }}"
+          echo "CC_URL=${{ secrets.CC_URL }}"
+          echo "正在检查环境变量是否正确配置…"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
