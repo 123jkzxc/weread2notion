@@ -107,17 +107,40 @@ def get_bookinfo(bookId):
         print(f"get {bookId} book info failed")
         return ("", 0)
 
-@retry(stop_max_attempt_number=3, wait_fixed=5000,retry_on_exception=refresh_token)
+@retry(stop_max_attempt_number=3, wait_fixed=5000, retry_on_exception=refresh_token)
 def get_review_list(bookId):
-    """获取笔记"""
+    """获取书评和笔记总结"""
     session.get(WEREAD_URL)
-    params = dict(bookId=bookId, listType=11, mine=1, syncKey=0)
-    r = session.get(WEREAD_REVIEW_LIST_URL, params=params)
-    reviews = r.json().get("reviews")
-    summary = list(filter(lambda x: x.get("review").get("type") == 4, reviews))
-    reviews = list(filter(lambda x: x.get("review").get("type") == 1, reviews))
-    reviews = list(map(lambda x: x.get("review"), reviews))
-    reviews = list(map(lambda x: {**x, "markText": x.pop("content")}, reviews))
+    params = dict(bookId=bookId)
+    r = session.get(WEREAD_REVIEWLIST_URL, params=params)
+
+    try:
+        data = r.json()
+    except Exception as e:
+        print("❌ 解析书评返回失败：", e)
+        return None, None
+
+    if data.get("errCode") == -2012:
+        print("🔁 登录超时，刷新 session，跳过本书书评：", bookId)
+        refresh_token()
+        time.sleep(5)
+        return None, None
+
+    reviews = data.get("reviews")
+    if not reviews:
+        return None, None
+
+    try:
+        summary = list(
+            filter(lambda x: x.get("review", {}).get("type") == 4, reviews)
+        )
+        reviews = list(
+            filter(lambda x: x.get("review", {}).get("type") != 4, reviews)
+        )
+    except Exception as e:
+        print("⚠️ 处理书评失败，跳过本书：", bookId, e)
+        return None, None
+
     return summary, reviews
 
 
