@@ -231,7 +231,7 @@ def insert_to_notion(bookName, bookId, cover, sort, author, isbn, rating, catego
 
 
 # Main logic remains unchanged...
-if __name__ == "__main__":
+         if __name__ == "__main__":
     print("🚀 weread2notion 启动中…")
 
     session = requests.Session()
