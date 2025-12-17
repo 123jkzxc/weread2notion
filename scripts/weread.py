@@ -58,29 +58,29 @@ def refresh_token(exception=None):
         print("❌ 刷新 session 失败：", e)
         return False
 
-@retry(stop_max_attempt_number=3, wait_fixed=5000,retry_on_exception=refresh_token)
+@retry(stop_max_attempt_number=3, wait_fixed=5000, retry_on_exception=refresh_token)
 def get_bookmark_list(bookId):
     """获取我的划线"""
     session.get(WEREAD_URL)
     params = dict(bookId=bookId)
     r = session.get(WEREAD_BOOKMARKLIST_URL, params=params)
 
-data = r.json()
-if data.get("errCode") == -2012:
-    print("🔁 登录超时，刷新 session 后重试本书：", bookId)
-    refresh_token()
-    time.sleep(5)
-    return None  # 这一本先跳过，不让整个程序死
+    data = r.json()
+    if data.get("errCode") == -2012:
+        print("🔁 登录超时，刷新 session 后重试本书：", bookId)
+        refresh_token()
+        time.sleep(5)
+        return None  # 这一本先跳过，不让整个程序死
 
-if r.ok:
-    updated = data.get("updated")
-    updated = sorted(
-        updated,
-        key=lambda x: (x.get("chapterUid", 1), int(x.get("range").split("-")[0])),
-    )
-    return updated
+    if r.ok:
+        updated = data.get("updated")
+        updated = sorted(
+            updated,
+            key=lambda x: (x.get("chapterUid", 1), int(x.get("range").split("-")[0])),
+        )
+        return updated
 
-return None
+    return None
 
 @retry(stop_max_attempt_number=3, wait_fixed=5000,retry_on_exception=refresh_token)
 def get_read_info(bookId):
