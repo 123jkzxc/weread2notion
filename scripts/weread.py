@@ -64,15 +64,23 @@ def get_bookmark_list(bookId):
     session.get(WEREAD_URL)
     params = dict(bookId=bookId)
     r = session.get(WEREAD_BOOKMARKLIST_URL, params=params)
-    if r.ok:
-        print(r.json())
-        updated = r.json().get("updated")
-        updated = sorted(
-            updated,
-            key=lambda x: (x.get("chapterUid", 1), int(x.get("range").split("-")[0])),
-        )
-        return r.json()["updated"]
-    return None
+
+data = r.json()
+if data.get("errCode") == -2012:
+    print("🔁 登录超时，刷新 session 后重试本书：", bookId)
+    refresh_token()
+    time.sleep(5)
+    return None  # 这一本先跳过，不让整个程序死
+
+if r.ok:
+    updated = data.get("updated")
+    updated = sorted(
+        updated,
+        key=lambda x: (x.get("chapterUid", 1), int(x.get("range").split("-")[0])),
+    )
+    return updated
+
+return None
 
 @retry(stop_max_attempt_number=3, wait_fixed=5000,retry_on_exception=refresh_token)
 def get_read_info(bookId):
