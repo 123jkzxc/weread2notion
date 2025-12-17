@@ -231,27 +231,26 @@ def insert_to_notion(bookName, bookId, cover, sort, author, isbn, rating, catego
 
 
 # Main logic remains unchanged...
-         if __name__ == "__main__":
-             print("🚀 weread2notion 启动中…")
-             
-             session = requests.Session()
-             session.headers.update({
-                 "User-Agent": "Mozilla/5.0",
-                 "Referer": "https://weread.qq.com/"
-             })
+print("🚀 weread2notion 启动中…")
 
-             cookie_string = os.getenv("WEREAD_COOKIE")
-             if not cookie_string:
-                 raise RuntimeError("未检测到 WEREAD_COOKIE")
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0",
+    "Referer": "https://weread.qq.com/"
+})
 
-             session.cookies = parse_cookie_string(cookie_string)
+cookie_string = os.getenv("WEREAD_COOKIE")
+if not cookie_string:
+    raise RuntimeError("未检测到 WEREAD_COOKIE")
 
-             notion_token = os.getenv("NOTION_TOKEN")
-             database_id = os.getenv("NOTION_DATABASE_ID")
+session.cookies = parse_cookie_string(cookie_string)
 
-             if not notion_token or not database_id:
-                 raise RuntimeError("未检测到 Notion 配置")
+notion_token = os.getenv("NOTION_TOKEN")
+database_id = os.getenv("NOTION_DATABASE_ID")
 
-             client = Client(auth=notion_token)
+if not notion_token or not database_id:
+    raise RuntimeError("未检测到 Notion 配置")
 
-             print("✅ 环境初始化完成")
+client = Client(auth=notion_token)
+
+print("✅ 环境初始化完成")
