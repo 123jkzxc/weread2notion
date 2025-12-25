@@ -58,7 +58,7 @@ def refresh_token(exception):
         session.get(WEREAD_URL, timeout=10)
         time.sleep(5)
         return True
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions. RequestException as e:
         print(f"❌ 网络请求异常: {e}")
         return False
     except Exception as e:
@@ -95,13 +95,83 @@ def get_notebooklist():
     r = session.get(WEREAD_NOTEBOOKS_URL)
     if r.ok:
         books = r.json().get("books")
-        books.sort(key=lambda x: x["sort"])
+        books. sort(key=lambda x: x["sort"])
         return books
     print("❌ 无法获取书籍列表，返回:", r.text)
     return None
 
 
-if __name__ == "__main__":
+def sync_bookmarks_to_notion(client, database_id, book, bookmarks):
+    """将划线同步到 Notion 数据库"""
+    try:
+        book_title = book.get("title", "Unknown")
+        book_id = book.get("bookId")
+        book_author = book.get("author", "")
+        
+        # 构建每条划线的内容
+        children = []
+        for bookmark in bookmarks:
+            text = bookmark.get("text", "")
+            chapter_uid = bookmark.get("chapterUid", "")
+            
+            if text: 
+                # 添加划线内容作为段落
+                children.append({
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text":  {
+                                    "content": text,
+                                    "link": None
+                                }
+                            }
+                        ]
+                    }
+                })
+        
+        # 创建 Notion 页面
+        page_data = {
+            "parent": {"database_id": database_id},
+            "properties": {
+                "title": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": book_title
+                        }
+                    }
+                ]
+            },
+            "children": children if children else [
+                {
+                    "object":  "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": "暂无划线"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        
+        response = client.pages.create(**page_data)
+        print(f"✅ 书籍 '{book_title}' 的 {len(bookmarks)} 条划线已同步到 Notion")
+        return True
+    except Exception as e:
+        print(f"❌ 同步失败: {e}")
+        return False
+
+
+if __name__ == "__main__": 
     print("🚀 weread2notion 启动中…")
 
     session = requests.Session()
@@ -135,11 +205,13 @@ if __name__ == "__main__":
     print("📚 开始同步书籍笔记与划线")
     for book in books:
         book_id = book.get("bookId")
-        print(f"📖 当前处理书籍: {book.get('title')} (ID: {book_id})")
+        print(f"📖 当前处理书籍:  {book. get('title')} (ID: {book_id})")
         bookmarks = get_bookmark_list(book_id)
         if bookmarks is None:
-            print(f"⚠️ 跳过书籍 ID: {book_id}")
+            print(f"⚠️ 跳过书籍 ID:  {book_id}")
         else:
-            print(f"✅ 书籍 ID {book_id} 的笔记已同步")
+            # 同步到 Notion
+            sync_bookmarks_to_notion(client, database_id, book, bookmarks)
+            time.sleep(1)  # 避免 API 限流
 
     print("📂 所有任务处理完成")
